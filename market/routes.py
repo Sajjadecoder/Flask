@@ -1,6 +1,6 @@
 from market import app,render_template,db
 from market.models import Item,User
-from flask import redirect,url_for
+from flask import redirect,url_for,flash
 from market.forms import RegisterForm
 @app.route("/")
 @app.route("/home")
@@ -19,19 +19,19 @@ def register_page():
     if form.validate_on_submit():
         newUser = User(username = form.username.data,
                        email = form.email.data,
-                       password_hash = form.password1.data)
+                       password = form.password1.data) #this line executes the @password_setter method inside models.py 
     
         db.session.add(newUser)
         db.session.commit()
         return redirect(url_for('market_page'))
     if form.errors!={}: #a check for errors in form input
         for err_msg in form.errors.values():
-            print(f'Error encountered while registering User: {err_msg}')
+            flash(f'Error encountered while registering User: {err_msg}',category='danger')
     return render_template('register.html',form=form)
 
 
 
-@app.route('/login')
+@app.route('/login',methods = ['GET','POST'])
 def login_page():
     # form = RegisterForm()
     return f'<h1>Login page</h1>'
