@@ -1,18 +1,19 @@
 from market import app,render_template,db
 from market.models import Item,User
 from flask import redirect,url_for,flash
-from market.forms import RegisterForm,LoginForm
-from flask_login import login_user
+from market.forms import RegisterForm,LoginForm,PurchaseItemForm,SellItemForm
+from flask_login import login_user,logout_user,login_required
 @app.route("/")
 @app.route("/home")
 #display the home page in both of the routes
 def home_page():
     return render_template('home.html')
 @app.route('/market')
-
+@login_required
 def market_page():
+    purchase_form = PurchaseItemForm()
     items = Item.query.all()
-    return render_template('market.html',items = items) 
+    return render_template('market.html',items = items,purchase_form=purchase_form) 
 
 @app.route('/register',methods=['GET','POST'])
 def register_page():
@@ -24,6 +25,10 @@ def register_page():
     
         db.session.add(newUser)
         db.session.commit()
+        login_user(newUser.username)
+        flash(f'Account Created and Successfully logged in as {newUser.username}',category='success')
+        
+        
         return redirect(url_for('market_page'))
     if form.errors!={}: #a check for errors in form input
         for err_msg in form.errors.values():
@@ -44,6 +49,20 @@ def login_page():
         else:
             flash('Username or password do not match',category='danger')
     return render_template('login.html',form = form)
+
+@app.route('/logout')
+def logout_page():
+    logout_user()
+    flash(f'Logged Out Successfully',category='info')
+    return redirect(url_for('home_page'))    
+
+
+
+
+
+
+
+
 
 # dynamic routes
 @app.route('/about/<username>')
