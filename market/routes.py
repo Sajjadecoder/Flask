@@ -1,19 +1,32 @@
 from market import app,render_template,db
 from market.models import Item,User
-from flask import redirect,url_for,flash
+from flask import redirect,url_for,flash,request
 from market.forms import RegisterForm,LoginForm,PurchaseItemForm,SellItemForm
-from flask_login import login_user,logout_user,login_required
+from flask_login import login_user,logout_user,login_required,current_user
 @app.route("/")
 @app.route("/home")
 #display the home page in both of the routes
 def home_page():
     return render_template('home.html')
-@app.route('/market')
+@app.route('/market',methods = ['GET','POST'])
 @login_required
 def market_page():
     purchase_form = PurchaseItemForm()
-    items = Item.query.all()
-    return render_template('market.html',items = items,purchase_form=purchase_form) 
+    if request.method=='POST':
+        if purchase_form.validate_on_submit():
+            purchased_item = request.form.get('purchased_item')
+            p_item_object = Item.query.filter_by(name=purchased_item).first() 
+            if p_item_object:
+                if p_item_object.price > current_user.budget:
+                    flash(f'{purchased_item} price exceeds your budget',category='danger')
+                else:
+                    p_item_object.buy(current_user)
+                    flash(f'{purchased_item} bought for {p_item_object.price}$',category='success')
+        return redirect(url_for('market_page'))
+    if request.method == 'GET':
+        items = Item.query.filter_by(owner=None).all()
+
+        return render_template('market.html',items = items,purchase_form=purchase_form) 
 
 @app.route('/register',methods=['GET','POST'])
 def register_page():
