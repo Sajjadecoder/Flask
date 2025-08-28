@@ -25,6 +25,9 @@ class User(db.Model,UserMixin):
             self.password_hash = bcrypt.generate_password_hash(plain_text_password).decode('utf-8')
       def check_password_correction(self,original_password):
             return bcrypt.check_password_hash(self.password_hash,original_password)
+
+      def can_sell(self,item_obj):
+            return item_obj in self.items
              
 class Item(db.Model):
       id = db.Column(db.Integer(),primary_key = True)
@@ -38,4 +41,8 @@ class Item(db.Model):
       def buy(self,user):
             self.owner =user.id
             user.budget -= self.price
+            db.session.commit()
+      def sell(self,user):
+            self.owner =None
+            user.budget += self.price
             db.session.commit()
